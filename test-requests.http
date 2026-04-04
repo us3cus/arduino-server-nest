@@ -12,6 +12,24 @@ Accept: application/json
 GET {{baseUrl}}/api/device/command
 Accept: application/json
 
+### Set LCD text (Arduino shows it)
+POST {{baseUrl}}/api/lcd
+Content-Type: application/json
+
+{
+  "line1": "Hello ESP32",
+  "line2": "From Postman"
+}
+
+### Clear LCD remote text
+POST {{baseUrl}}/api/lcd
+Content-Type: application/json
+
+{
+  "line1": "",
+  "line2": ""
+}
+
 ### Set relay ON
 POST {{baseUrl}}/api/relay
 Content-Type: application/json
@@ -50,4 +68,8 @@ Content-Type: application/json
 
 ### Root status after telemetry
 GET {{baseUrl}}/
+Accept: application/json
+
+### Get latest DHT values from backend
+GET {{baseUrl}}/api/device/dht
 Accept: application/json

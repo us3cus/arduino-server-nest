@@ -33,6 +33,52 @@
       }
     },
     {
+      "name": "Set LCD Text (Arduino shows it)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"line1\": \"Hello ESP32\",\n  \"line2\": \"From Postman\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": "{{baseUrl}}/api/lcd",
+        "description": "Sets LCD text command for the device"
+      }
+    },
+    {
+      "name": "Clear LCD Text",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"line1\": \"\",\n  \"line2\": \"\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": "{{baseUrl}}/api/lcd",
+        "description": "Clears remote LCD text command"
+      }
+    },
+    {
       "name": "Set Relay ON (send command to Arduino)",
       "request": {
         "method": "POST",
@@ -122,6 +168,15 @@
         },
         "url": "{{baseUrl}}/api/device/telemetry",
         "description": "Manual telemetry request"
+      }
+    },
+    {
+      "name": "Get Latest DHT Data",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/device/dht",
+        "description": "Returns latest temperature and humidity from telemetry"
       }
     }
   ],

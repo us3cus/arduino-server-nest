@@ -47,7 +47,40 @@ describe('AppController (e2e)', () => {
       .expect(200)
       .expect(({ body }) => {
         expect(body.relay).toBe(0);
+        expect(body.lcd_line1).toBe('');
+        expect(body.lcd_line2).toBe('');
         expect(typeof body.timestamp).toBe('string');
+      });
+  });
+
+  it('/api/lcd (POST) updates lcd command text', async () => {
+    await request(app.getHttpServer())
+      .post('/api/lcd')
+      .send({ line1: 'Hello ESP32', line2: 'Postman says hi' })
+      .expect(201)
+      .expect(({ body }) => {
+        expect(body.ok).toBe(true);
+        expect(body.lcd_line1).toBe('Hello ESP32');
+        expect(body.lcd_line2).toBe('Postman says hi');
+      });
+
+    await request(app.getHttpServer())
+      .get('/api/device/command')
+      .expect(200)
+      .expect(({ body }) => {
+        expect(body.lcd_line1).toBe('Hello ESP32');
+        expect(body.lcd_line2).toBe('Postman says hi');
+      });
+  });
+
+  it('/api/lcd (POST) validates payload', () => {
+    return request(app.getHttpServer())
+      .post('/api/lcd')
+      .send({ line1: 123 })
+      .expect(400)
+      .expect(({ body }) => {
+        expect(body.ok).toBe(false);
+        expect(body.error).toBe('line1 and line2 must be strings');
       });
   });
 
@@ -106,6 +139,16 @@ describe('AppController (e2e)', () => {
         expect(body.ok).toBe(true);
         expect(body.lastTelemetry).toEqual(telemetryPayload);
         expect(typeof body.lastSeen).toBe('string');
+      });
+
+    await request(app.getHttpServer())
+      .get('/api/device/dht')
+      .expect(200)
+      .expect(({ body }) => {
+        expect(body.ok).toBe(true);
+        expect(body.temperature_c).toBe(24.5);
+        expect(body.humidity).toBe(51);
+        expect(typeof body.timestamp).toBe('string');
       });
   });
 

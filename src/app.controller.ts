@@ -20,6 +20,11 @@ export class AppController {
     return this.appService.getDeviceCommand();
   }
 
+  @Get('api/device/dht')
+  getDeviceDht() {
+    return this.appService.getLatestDht();
+  }
+
   @Post('api/device/telemetry')
   postDeviceTelemetry(@Body() body: Record<string, unknown>) {
     return this.appService.saveTelemetry(body);
@@ -37,5 +42,20 @@ export class AppController {
     }
 
     return this.appService.setRelay(relay);
+  }
+
+  @Post('api/lcd')
+  postLcd(@Body() body: { line1?: unknown; line2?: unknown }) {
+    const line1 = body?.line1;
+    const line2 = body?.line2;
+
+    if ((line1 !== undefined && typeof line1 !== 'string') || (line2 !== undefined && typeof line2 !== 'string')) {
+      throw new BadRequestException({
+        ok: false,
+        error: 'line1 and line2 must be strings',
+      });
+    }
+
+    return this.appService.setLcdText(line1 ?? '', line2 ?? '');
   }
 }

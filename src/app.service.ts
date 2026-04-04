@@ -7,6 +7,8 @@ export class AppService {
   private relayState = 0;
   private lastTelemetry: TelemetryPayload | null = null;
   private lastSeen: string | null = null;
+  private lcdLine1 = '';
+  private lcdLine2 = '';
 
   getRootStatus() {
     return {
@@ -28,7 +30,37 @@ export class AppService {
   getDeviceCommand() {
     return {
       relay: this.relayState,
+      lcd_line1: this.lcdLine1,
+      lcd_line2: this.lcdLine2,
       timestamp: new Date().toISOString(),
+    };
+  }
+
+  setLcdText(line1: string, line2: string) {
+    this.lcdLine1 = line1.slice(0, 16);
+    this.lcdLine2 = line2.slice(0, 16);
+
+    console.log('[LCD]', new Date().toISOString(), {
+      line1: this.lcdLine1,
+      line2: this.lcdLine2,
+    });
+
+    return {
+      ok: true,
+      lcd_line1: this.lcdLine1,
+      lcd_line2: this.lcdLine2,
+    };
+  }
+
+  getLatestDht() {
+    const temperatureC = this.toNumberOrNull(this.lastTelemetry?.temperature_c);
+    const humidity = this.toNumberOrNull(this.lastTelemetry?.humidity);
+
+    return {
+      ok: true,
+      temperature_c: temperatureC,
+      humidity,
+      timestamp: this.lastSeen,
     };
   }
 
@@ -55,5 +87,13 @@ export class AppService {
       ok: true,
       relay: this.relayState,
     };
+  }
+
+  private toNumberOrNull(value: unknown): number | null {
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      return value;
+    }
+
+    return null;
   }
 }
