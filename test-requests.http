@@ -1,0 +1,53 @@
+@baseUrl = http://127.0.0.1:3000
+
+### Root status
+GET {{baseUrl}}/
+Accept: application/json
+
+### Health
+GET {{baseUrl}}/health
+Accept: application/json
+
+### Device command (read relay state)
+GET {{baseUrl}}/api/device/command
+Accept: application/json
+
+### Set relay ON
+POST {{baseUrl}}/api/relay
+Content-Type: application/json
+
+{
+  "relay": 1
+}
+
+### Set relay OFF
+POST {{baseUrl}}/api/relay
+Content-Type: application/json
+
+{
+  "relay": 0
+}
+
+### Invalid relay (validation test)
+POST {{baseUrl}}/api/relay
+Content-Type: application/json
+
+{
+  "relay": 2
+}
+
+### Send telemetry
+POST {{baseUrl}}/api/device/telemetry
+Content-Type: application/json
+
+{
+  "device_id": "esp32-test-01",
+  "relay": 0,
+  "sensor_mock": 123,
+  "temperature_c": 24.5,
+  "humidity": 51
+}
+
+### Root status after telemetry
+GET {{baseUrl}}/
+Accept: application/json
