@@ -1,4 +1,10 @@
-import { BadRequestException, Body, Controller, Get, Post } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Get,
+  Post,
+} from '@nestjs/common';
 import { AppService } from './app.service';
 
 @Controller()
@@ -45,11 +51,30 @@ export class AppController {
   }
 
   @Post('api/lcd')
-  postLcd(@Body() body: { line1?: unknown; line2?: unknown }) {
-    const line1 = body?.line1;
-    const line2 = body?.line2;
+  postLcd(
+    @Body()
+    body: {
+      line1?: unknown;
+      line2?: unknown;
+      lcd_line1?: unknown;
+      lcd_line2?: unknown;
+    },
+  ) {
+    const line1 = body?.line1 ?? body?.lcd_line1;
+    const line2 = body?.line2 ?? body?.lcd_line2;
 
-    if ((line1 !== undefined && typeof line1 !== 'string') || (line2 !== undefined && typeof line2 !== 'string')) {
+    if (line1 === undefined && line2 === undefined) {
+      throw new BadRequestException({
+        ok: false,
+        error:
+          'Request body is empty. Send JSON with line1/line2 and Content-Type: application/json',
+      });
+    }
+
+    if (
+      (line1 !== undefined && typeof line1 !== 'string') ||
+      (line2 !== undefined && typeof line2 !== 'string')
+    ) {
       throw new BadRequestException({
         ok: false,
         error: 'line1 and line2 must be strings',

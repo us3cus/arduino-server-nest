@@ -84,6 +84,31 @@ describe('AppController (e2e)', () => {
       });
   });
 
+  it('/api/lcd (POST) accepts lcd_line1/lcd_line2 aliases', async () => {
+    await request(app.getHttpServer())
+      .post('/api/lcd')
+      .send({ lcd_line1: 'Alias line 1', lcd_line2: 'Alias line 2' })
+      .expect(201)
+      .expect(({ body }) => {
+        expect(body.ok).toBe(true);
+        expect(body.lcd_line1).toBe('Alias line 1');
+        expect(body.lcd_line2).toBe('Alias line 2');
+      });
+  });
+
+  it('/api/lcd (POST) rejects empty body', () => {
+    return request(app.getHttpServer())
+      .post('/api/lcd')
+      .send({})
+      .expect(400)
+      .expect(({ body }) => {
+        expect(body.ok).toBe(false);
+        expect(body.error).toBe(
+          'Request body is empty. Send JSON with line1/line2 and Content-Type: application/json',
+        );
+      });
+  });
+
   it('/api/relay (POST) updates relay to 1', async () => {
     await request(app.getHttpServer())
       .post('/api/relay')
