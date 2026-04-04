@@ -1,0 +1,135 @@
+{
+  "info": {
+    "_postman_id": "f8c86a86-3d8c-4c1f-a01b-0d8208f2f6f1",
+    "name": "Arduino Control via Nest Backend",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/health",
+        "description": "Backend health check"
+      }
+    },
+    {
+      "name": "Root Status",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/",
+        "description": "Shows relayState, lastSeen and lastTelemetry"
+      }
+    },
+    {
+      "name": "Get Device Command (what Arduino reads)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/device/command",
+        "description": "Arduino fetches this endpoint periodically"
+      }
+    },
+    {
+      "name": "Set Relay ON (send command to Arduino)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"relay\": 1\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": "{{baseUrl}}/api/relay",
+        "description": "Sets relay command to 1. Arduino applies it on next poll"
+      }
+    },
+    {
+      "name": "Set Relay OFF (send command to Arduino)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"relay\": 0\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": "{{baseUrl}}/api/relay",
+        "description": "Sets relay command to 0. Arduino applies it on next poll"
+      }
+    },
+    {
+      "name": "Invalid Relay (validation test)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"relay\": 2\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": "{{baseUrl}}/api/relay",
+        "description": "Should return 400 with relay must be 0 or 1"
+      }
+    },
+    {
+      "name": "Send Test Telemetry",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"device_id\": \"esp32-test-01\",\n  \"relay\": 0,\n  \"sensor_mock\": 123,\n  \"temperature_c\": 24.5,\n  \"humidity\": 51\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": "{{baseUrl}}/api/device/telemetry",
+        "description": "Manual telemetry request"
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:3000",
+      "type": "string"
+    }
+  ]
+}
