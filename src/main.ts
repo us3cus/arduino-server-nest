@@ -1,5 +1,26 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
+import * as fs from 'fs';
+import * as path from 'path';
+
+// Загрузка .env и принудительная установка таймзоны
+try {
+  const envPath = path.resolve(__dirname, '..', '.env');
+  if (fs.existsSync(envPath)) {
+    const envFile = fs.readFileSync(envPath, 'utf8');
+    for (const line of envFile.split('\n')) {
+      const match = line.match(/^([^=]+)=(.*)$/);
+      if (match && !process.env[match[1]]) {
+        process.env[match[1]] = match[2].trim();
+      }
+    }
+  }
+} catch (e) {
+  // ignore
+}
+
+// Применяем таймзону (если не была передана снаружи, берется из .env, либо Алматы по умолчанию)
+process.env.TZ = process.env.TZ || 'Asia/Almaty';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
