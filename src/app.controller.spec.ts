@@ -16,10 +16,17 @@ describe('AppController', () => {
 
   describe('root', () => {
     it('should return backend status payload', () => {
-      expect(appController.getRootStatus()).toEqual({
+      expect(appController.getRootStatus()).toMatchObject({
         ok: true,
-        message: 'ESP32 test backend is running',
+        message: 'Growbox backend is running',
+        mode: 'manual',
         relayState: 0,
+        relays: {
+          light: 0,
+          fan: 0,
+          humidifier: 0,
+          pump: 0,
+        },
         lastSeen: null,
         lastTelemetry: null,
       });

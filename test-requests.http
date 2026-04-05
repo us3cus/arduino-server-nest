@@ -8,7 +8,27 @@ Accept: application/json
 GET {{baseUrl}}/health
 Accept: application/json
 
-### Device command (read relay state)
+### Current control mode
+GET {{baseUrl}}/api/mode
+Accept: application/json
+
+### Switch to manual mode
+POST {{baseUrl}}/api/mode
+Content-Type: application/json
+
+{
+  "mode": "manual"
+}
+
+### Switch to auto mode
+POST {{baseUrl}}/api/mode
+Content-Type: application/json
+
+{
+  "mode": "auto"
+}
+
+### Device command (4-channel state)
 GET {{baseUrl}}/api/device/command
 Accept: application/json
 
@@ -30,7 +50,7 @@ Content-Type: application/json
   "line2": ""
 }
 
-### Set relay ON
+### Legacy light relay ON
 POST {{baseUrl}}/api/relay
 Content-Type: application/json
 
@@ -38,7 +58,7 @@ Content-Type: application/json
   "relay": 1
 }
 
-### Set relay OFF
+### Legacy light relay OFF
 POST {{baseUrl}}/api/relay
 Content-Type: application/json
 
@@ -46,12 +66,35 @@ Content-Type: application/json
   "relay": 0
 }
 
-### Invalid relay (validation test)
+### Set single channel
 POST {{baseUrl}}/api/relay
 Content-Type: application/json
 
 {
-  "relay": 2
+  "channel": "fan",
+  "state": 1
+}
+
+### Set multiple channels
+POST {{baseUrl}}/api/relay
+Content-Type: application/json
+
+{
+  "relays": {
+    "light": 1,
+    "fan": 0,
+    "humidifier": 1,
+    "pump": 0
+  }
+}
+
+### Invalid relay payload (validation test)
+POST {{baseUrl}}/api/relay
+Content-Type: application/json
+
+{
+  "channel": "fan",
+  "state": 2
 }
 
 ### Send telemetry
@@ -59,9 +102,12 @@ POST {{baseUrl}}/api/device/telemetry
 Content-Type: application/json
 
 {
-  "device_id": "esp32-test-01",
+  "device_id": "esp32-growbox-01",
   "relay": 0,
-  "sensor_mock": 123,
+  "relay_light": 0,
+  "relay_fan": 0,
+  "relay_humidifier": 0,
+  "relay_pump": 0,
   "temperature_c": 24.5,
   "humidity": 51
 }

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
@@ -21,10 +22,17 @@ describe('AppController (e2e)', () => {
       .get('/')
       .expect(200)
       .expect(({ body }) => {
-        expect(body).toEqual({
+        expect(body).toMatchObject({
           ok: true,
-          message: 'ESP32 test backend is running',
+          message: 'Growbox backend is running',
+          mode: 'manual',
           relayState: 0,
+          relays: {
+            light: 0,
+            fan: 0,
+            humidifier: 0,
+            pump: 0,
+          },
           lastSeen: null,
           lastTelemetry: null,
         });
@@ -41,15 +49,65 @@ describe('AppController (e2e)', () => {
       });
   });
 
-  it('/api/device/command (GET) returns relay state', () => {
+  it('/api/device/command (GET) returns 4-channel command', () => {
     return request(app.getHttpServer())
       .get('/api/device/command')
       .expect(200)
       .expect(({ body }) => {
+        expect(body.mode).toBe('manual');
         expect(body.relay).toBe(0);
+        expect(body.relay_light).toBe(0);
+        expect(body.relay_fan).toBe(0);
+        expect(body.relay_humidifier).toBe(0);
+        expect(body.relay_pump).toBe(0);
+        expect(body.relays).toEqual({
+          light: 0,
+          fan: 0,
+          humidifier: 0,
+          pump: 0,
+        });
         expect(body.lcd_line1).toBe('');
         expect(body.lcd_line2).toBe('');
         expect(typeof body.timestamp).toBe('string');
+      });
+  });
+
+  it('/api/mode (GET) returns default manual mode', () => {
+    return request(app.getHttpServer())
+      .get('/api/mode')
+      .expect(200)
+      .expect(({ body }) => {
+        expect(body.ok).toBe(true);
+        expect(body.mode).toBe('manual');
+      });
+  });
+
+  it('/api/mode (POST) switches to auto mode', async () => {
+    await request(app.getHttpServer())
+      .post('/api/mode')
+      .send({ mode: 'auto' })
+      .expect(201)
+      .expect(({ body }) => {
+        expect(body.ok).toBe(true);
+        expect(body.mode).toBe('auto');
+      });
+
+    await request(app.getHttpServer())
+      .get('/api/mode')
+      .expect(200)
+      .expect(({ body }) => {
+        expect(body.mode).toBe('auto');
+      });
+  });
+
+  it('/api/mode (POST) validates mode value', () => {
+    return request(app.getHttpServer())
+      .post('/api/mode')
+      .send({ mode: 'invalid-mode' })
+      .expect(400)
+      .expect(({ body }) => {
+        expect(body.ok).toBe(false);
+        expect(body.error).toBe("mode must be 'manual' or 'auto'");
       });
   });
 
@@ -109,13 +167,15 @@ describe('AppController (e2e)', () => {
       });
   });
 
-  it('/api/relay (POST) updates relay to 1', async () => {
+  it('/api/relay (POST) supports legacy light relay payload', async () => {
     await request(app.getHttpServer())
       .post('/api/relay')
       .send({ relay: 1 })
       .expect(201)
       .expect(({ body }) => {
-        expect(body).toEqual({ ok: true, relay: 1 });
+        expect(body.ok).toBe(true);
+        expect(body.relay).toBe(1);
+        expect(body.relays.light).toBe(1);
       });
 
     await request(app.getHttpServer())
@@ -123,6 +183,43 @@ describe('AppController (e2e)', () => {
       .expect(200)
       .expect(({ body }) => {
         expect(body.relay).toBe(1);
+        expect(body.relay_light).toBe(1);
+      });
+  });
+
+  it('/api/relay (POST) supports channel + state payload', async () => {
+    await request(app.getHttpServer())
+      .post('/api/relay')
+      .send({ channel: 'fan', state: 1 })
+      .expect(201)
+      .expect(({ body }) => {
+        expect(body.ok).toBe(true);
+        expect(body.updatedChannel).toBe('fan');
+        expect(body.relays.fan).toBe(1);
+      });
+
+    await request(app.getHttpServer())
+      .get('/api/device/command')
+      .expect(200)
+      .expect(({ body }) => {
+        expect(body.relay_fan).toBe(1);
+      });
+  });
+
+  it('/api/relay (POST) supports multi-channel relays payload', async () => {
+    await request(app.getHttpServer())
+      .post('/api/relay')
+      .send({
+        relays: {
+          light: 1,
+          humidifier: 1,
+        },
+      })
+      .expect(201)
+      .expect(({ body }) => {
+        expect(body.ok).toBe(true);
+        expect(body.relays.light).toBe(1);
+        expect(body.relays.humidifier).toBe(1);
       });
   });
 
@@ -137,11 +234,31 @@ describe('AppController (e2e)', () => {
       });
   });
 
+  it('/api/relay (POST) blocks manual updates in auto mode', async () => {
+    await request(app.getHttpServer())
+      .post('/api/mode')
+      .send({ mode: 'auto' })
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .post('/api/relay')
+      .send({ channel: 'light', state: 1 })
+      .expect(409)
+      .expect(({ body }) => {
+        expect(body.ok).toBe(false);
+        expect(body.error).toBe(
+          'Manual relay control is disabled while mode is auto',
+        );
+      });
+  });
+
   it('/api/device/telemetry (POST) saves telemetry and updates root state', async () => {
     const telemetryPayload = {
       device_id: 'esp32-test-01',
-      relay: 0,
-      sensor_mock: 123,
+      relay_light: 0,
+      relay_fan: 0,
+      relay_humidifier: 0,
+      relay_pump: 0,
       temperature_c: 24.5,
       humidity: 51,
     };
@@ -153,6 +270,7 @@ describe('AppController (e2e)', () => {
       .expect(({ body }) => {
         expect(body.ok).toBe(true);
         expect(body.received).toBe(true);
+        expect(body.mode).toBe('manual');
         expect(body.relay).toBe(0);
         expect(typeof body.timestamp).toBe('string');
       });
@@ -174,6 +292,48 @@ describe('AppController (e2e)', () => {
         expect(body.temperature_c).toBe(24.5);
         expect(body.humidity).toBe(51);
         expect(typeof body.timestamp).toBe('string');
+      });
+  });
+
+  it('/api/device/telemetry + auto mode applies fan/humidifier thresholds', async () => {
+    await request(app.getHttpServer())
+      .post('/api/mode')
+      .send({ mode: 'auto' })
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .post('/api/device/telemetry')
+      .send({
+        device_id: 'esp32-growbox',
+        temperature_c: 29,
+        humidity: 50,
+      })
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .get('/api/device/command')
+      .expect(200)
+      .expect(({ body }) => {
+        expect(body.mode).toBe('auto');
+        expect(body.relay_fan).toBe(1);
+        expect(body.relay_humidifier).toBe(1);
+      });
+
+    await request(app.getHttpServer())
+      .post('/api/device/telemetry')
+      .send({
+        device_id: 'esp32-growbox',
+        temperature_c: 24,
+        humidity: 70,
+      })
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .get('/api/device/command')
+      .expect(200)
+      .expect(({ body }) => {
+        expect(body.relay_fan).toBe(0);
+        expect(body.relay_humidifier).toBe(0);
       });
   });
 
